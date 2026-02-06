@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <title> Deployment Logs (SSE)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: white;
+            color: black;
+        }
+        #logs {
+            white-space: pre-wrap;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        button {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2> Deployment Logs</h2>
+
+<button onclick="startDeployment()"> Start Deployment </button>
+<div id="logs"></div>
+
+<script>
+    let logsDiv = document.getElementById("logs")
+    let eventSource = null
+
+    function startDeployment() {
+        fetch("/run_deployment");
+
+        logsDiv.textContent = "";
+
+        eventSource = new EventSource("/stream_logs");
+        eventSource.onmessage = function(event) {
+            logsDiv.textContent = event.data + "\n" + logsDiv.textContent;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        };
+
+        eventSource.onerror = function () {
+            console.log("SSE connection error");
+            eventSource.close();
+        };
+    }
+</script>
+
+</body>
+</html>

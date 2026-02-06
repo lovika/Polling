@@ -112,3 +112,12 @@ last_known_status: BOOTING_INSTANCE
 new_status response: {'changed': True, 'instance_id': '1', 'status': 'RUNNING'}
 EC2 is ready. Stopping long polling.
 ```
+
+# Server-Sent Events (SSE)
+
+**1. Start Server**
+`python sse/server.py`
+
+**2. Deployment Interface**
+
+`http://127.0.0.1:5001/`
