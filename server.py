@@ -1,5 +1,7 @@
 import time
-from flask import Flask, jsonify
+from time import sleep
+
+from flask import Flask, jsonify, request
 import mysql.connector
 import threading
 
@@ -83,6 +85,39 @@ def get_ec2_status(instance_id):
         "instance_id": instance_id,
         "status": row[0],
     })
+
+@app.route('/wait_for_status/<instance_id>')
+def wait_for_status(instance_id):
+    last_known_status = request.args.get("last_status")
+    timeout_seconds = 20
+    poll_interval = 1
+
+    start_time = time.time()
+
+    while True:
+        conn = get_db_connection()
+        curser = conn.cursor()
+
+        curser.execute("SELECT status FROM ec2_instance WHERE instance_id = %s", (instance_id,))
+        row = curser.fetchone()
+        if not row:
+            return jsonify({"status": "NOT_FOUND",
+                            "instance_id": instance_id,})
+
+        current_status = row[0]
+
+        if current_status != last_known_status:
+            return jsonify({"instance_id": instance_id,
+                            "status": current_status,
+                            "changed": True})
+
+        if time.time() - start_time > timeout_seconds:
+            return jsonify({"instance_id": instance_id,
+                            "status": current_status,
+                            "changed": False,
+                            "Timeout": True})
+        sleep(poll_interval)
+
 
 if __name__ == '__main__':
     app.run(debug=True, threaded=True)
